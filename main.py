@@ -35,7 +35,7 @@ def get_users():
 
 
 # get user by id
-@app.get('users/{user_id}')
+@app.get('/users/{user_id}')
 def get_user(user_id: int):
 
     for user in users:
@@ -58,19 +58,19 @@ def create_user(user: UserCreate):
         "email": user.email
     }
 
-    user.append(new_user) # simulating async database action
+    users.append(new_user) # simulating async database action
 
     return new_user
 
 
 # update user info
-@app.put('users/{user_id}')
+@app.put('/users/{user_id}')
 def update_user(user_id: int, user_to_update: UserCreate):
 
     for user in users:
         if user["id"] == user_id:
-            user["name"] == user_to_update.name
-            user["email"] == user_to_update.email
+            user["name"] = user_to_update.name
+            user["email"] = user_to_update.email
 
             return user
 
@@ -82,7 +82,7 @@ def update_user(user_id: int, user_to_update: UserCreate):
 
 
 # delete user
-@app.delete("user/{user_id}")
+@app.delete("/user/{user_id}")
 def delete_user(user_id: int):
     for user in users:
         if user['id'] == user_id:
