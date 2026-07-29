@@ -16,6 +16,8 @@ class User(Document):
         Indexed(unique=True),
     ]
 
+    password_hash: str
+
     balance: float = Field(
         default=0.0,
         ge=0,

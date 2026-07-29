@@ -2,13 +2,18 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from beanie import PydanticObjectId
-from fastapi import FastAPI, HTTPException, status
-
+from fastapi import FastAPI, HTTPException, status, Depends
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.middleware.cors import CORSMiddleware
+from utils.security import hash_password, verify_password
+from schemas.user import UserResponse
 from database.mongodb import client, initialize_database
 from models.transaction import Transaction
 from models.user import User
 from schemas.transaction import TransactionCreate
 from schemas.user import UserCreate, UserUpdate
+
+security = HTTPBasic()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,9 +27,47 @@ async def lifespan(app: FastAPI):
     await client.close()
 
 
+async def get_current_user_basic(
+    credentials: HTTPBasicCredentials = Depends(security),
+) -> User:
+    normalized_email = credentials.username.lower().strip()
+
+    user = await User.find_one(
+        User.email == normalized_email
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+    if not verify_password(
+        credentials.password,
+        user.password_hash,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+    return user
+
 app = FastAPI(
     title="Banking API Demo",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # helper function 
@@ -39,7 +82,7 @@ async def find_user(
             detail="User not found",
         )
 
-    return user
+    return UserResponse.form_user(user)
 
 
 # create new user
@@ -63,18 +106,35 @@ async def create_user(user_data: UserCreate):
     new_user = User(
         name=user_data.name.strip(),
         email=normalized_email,
+        password_hash=hash_password(user_data.password),
         balance=0.0,
     )
 
     await new_user.insert()
 
-    return new_user
+    return UserResponse.form_user(new_user)
+
+
+#authenticate user
+@app.get(
+    "/auth/me",
+    response_model=UserResponse,
+)
+async def get_authenticated_user(
+    current_user: User = Depends(get_current_user_basic),
+):
+    return UserResponse.form_user(current_user)
+
 
 
 # get all users
 @app.get("/users")
 async def get_users():
-    return await User.find_all().to_list()
+    users = await User.find_all().to_list()
+    return [
+        UserResponse.form_user(user)
+        for user in users
+    ]
 
 
 # get user by id
@@ -82,7 +142,8 @@ async def get_users():
 async def get_user(
     user_id: PydanticObjectId,
 ):
-    return await find_user(user_id) 
+    user = await find_user(user_id) 
+    return UserResponse.form_user(user)
 
 
 # update user
@@ -118,7 +179,7 @@ async def update_user(
 
     await user.save()
 
-    return user
+    return UserResponse.form_user(user)
 
 
 #delete user
