@@ -6,7 +6,9 @@ import {
   Link,
 } from "react-router-dom";
 
-import { authenticateUser } from "../services/api";
+import {  getCurrentUser,
+  loginUser,
+  saveToken, } from "../services/api";
 
 const DEMO_CREDENTIALS = {
   email: "casstiel@example.com",
@@ -38,33 +40,34 @@ function LoginPage({ currentUser, onLogin }) {
     }));
   }
 
-  async function signIn(email, password) {
-    try {
-      setError("");
-      setSubmitting(true);
+async function signIn(email, password) {
+  try {
+    setError("");
+    setSubmitting(true);
 
-      const user = await authenticateUser(email, password);
+    const tokenResponse = await loginUser(
+      email,
+      password
+    );
 
-      onLogin({
-        user,
-        credentials: {
-          email,
-          password,
-        },
-      });
+    saveToken(tokenResponse.access_token);
 
-      const destination =
-        location.state?.from?.pathname ?? "/services";
+    const user = await getCurrentUser();
 
-      navigate(destination, {
-        replace: true,
-      });
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSubmitting(false);
-    }
+    onLogin(user);
+
+    const destination =
+      location.state?.from?.pathname ?? "/services";
+
+    navigate(destination, {
+      replace: true,
+    });
+  } catch (requestError) {
+    setError(requestError.message);
+  } finally {
+    setSubmitting(false);
   }
+}
 
   async function handleSubmit(event) {
     event.preventDefault();

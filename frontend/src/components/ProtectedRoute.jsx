@@ -1,6 +1,9 @@
 import { Navigate, useLocation } from "react-router-dom";
 
-function ProtectedRoute({ currentUser, children }) {
+function ProtectedRoute({
+  currentUser,
+  children,
+}) {
   const location = useLocation();
 
   if (!currentUser) {

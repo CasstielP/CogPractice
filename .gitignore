@@ -4,3 +4,9 @@ frontend/node_modules/
 __pycache__/
 *.pyc
 frontend/.env
+# Backend deployment artifacts
+backend/lambda_deployment.zip
+backend/lambda_package/
+
+# Frontend production build
+frontend/dist/

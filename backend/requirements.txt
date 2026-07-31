@@ -2,7 +2,7 @@ annotated-doc==0.0.4
 annotated-types==0.8.0
 anyio==4.14.2
 argon2-cffi==25.1.0
-argon2-cffi-bindings==25.1.0
+argon2-cffi-bindings==21.2.0
 beanie==2.0.0
 certifi==2026.7.22
 cffi==2.1.0
@@ -21,6 +21,7 @@ httpx==0.28.1
 idna==3.18
 Jinja2==3.1.6
 lazy-model==0.3.0
+mangum==0.21.0
 markdown-it-py==4.2.0
 MarkupSafe==3.0.3
 mdurl==0.1.2
